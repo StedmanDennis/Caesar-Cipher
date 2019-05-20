@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
+	<title>Caesar Cipher</title>
+</head>
+<body>
+	<div id='app'></div>
+</body>
+<script>
+	window.addEventListener('resize', () => {
+	  let vh = window.innerHeight * 0.01;
+	  document.documentElement.style.setProperty('--vh', `${vh}px`);
+	});
+
+	Vue.component('caesar-cipher',{
+		template: `
+			<div class='main-container'>
+				<div>
+					<input type='text' v-model='rawText'/>
+					<input type='number' v-model='shift'/>
+				</div>
+				<div class='alphabet-list mono'>
+					<div v-for='(char, index) in alphabet' :class='[{from:fromIndex==index},{to:toIndex==index},"alphabet"]'>
+						<div>{{index}}</div>
+						<div>{{char.toUpperCase()}}</div>
+					</div>
+				</div>
+				<div v-if='hoverIndex > -1'>
+					<div>
+						Original Char: {{rawText.charAt(hoverIndex).toUpperCase()}}({{alphabet.indexOf(rawText.charAt(hoverIndex).toLowerCase())}})
+					</div>
+					<div>
+						Cipher Char: {{cipher.cipherText.charAt(hoverIndex).toUpperCase()}}({{alphabet.indexOf(cipher.cipherText.charAt(hoverIndex).toLowerCase())}})
+					</div>
+					<div>
+						({{alphabet.indexOf(rawText.charAt(hoverIndex).toLowerCase())}} + {{shift}}) mod 26 = {{(alphabet.indexOf(rawText.charAt(hoverIndex).toLowerCase()) + parseInt(shift)) % 26}}({{alphabet[(alphabet.indexOf(rawText.charAt(hoverIndex).toLowerCase()) + parseInt(shift)) % 26].toUpperCase()}})
+					</div>
+				</div>
+				<div v-else>
+					Pleave hover over a character to see how the cipher was calculated
+				</div>
+				<div @mouseout='hoverIndex = -1'>
+					<span class='mono' v-for='(char, index) in rawText' @mouseover='hover(index)'>{{char}}</span>
+				</div>
+				<div @mouseout='hoverIndex = -1'>
+					<span class='mono' v-for='(char, index) in cipher.cipherText' @mouseover='hover(index)'>{{char}}</span>
+				</div>
+			</div>
+		`,
+		data: function(){
+			return {
+				alphabet:[
+					'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'
+				],
+				rawText: 'Attack at dawn',
+				shift: '5',
+				hoverIndex: -1,
+			}
+		},
+		watch:{
+			rawText: function(){
+				this.hoverIndex = -1
+			}
+		},
+		computed:{
+			cipher: function(){
+				return this.caesarCipher(this.alphabet, this.rawText, parseInt(this.shift));
+			},
+			fromIndex: function(){
+				if(this.hoverIndex > -1){
+					return this.cipher.shiftArray[this.hoverIndex].from;
+				}else{
+					return -1;
+				}
+			},
+			toIndex: function(){
+				if(this.hoverIndex > -1){
+					return this.cipher.shiftArray[this.hoverIndex].to;
+				}else{
+					return -1;
+				}
+			}
+		},
+		methods: {
+			caesarCipher: function(alphabet, rawText, shift){
+				let rawTextArray = rawText.split('');
+				let charIndex = 0;
+				let shiftedCharIndex = 0;
+				let shiftArray = [];
+				let shiftedTextArray = rawTextArray.map(char => {
+					charIndex = alphabet.indexOf(char.toLowerCase());
+					isUpper = char === char.toUpperCase();
+					if (charIndex > -1){
+						shiftedCharIndex = (charIndex + shift) % alphabet.length;
+					}else{
+						shiftedCharIndex = charIndex;
+					}
+					shiftArray.push({from: charIndex, to: shiftedCharIndex});
+					if (shiftedCharIndex > -1){
+						if (isUpper){
+							return alphabet[shiftedCharIndex].toUpperCase();
+						}else{
+							return alphabet[shiftedCharIndex];
+						}
+					}else{
+						return char
+					}
+				});
+				return {shiftArray: shiftArray, cipherText: shiftedTextArray.join('')}
+			},
+			hover: function(index){
+				console.log(index)
+				this.hoverIndex = index;
+			}
+		}
+	})
+
+	new Vue({
+		el: '#app',
+		template: `
+			<caesar-cipher></caesar-cipher>
+		`
+	})
+</script>
+<style>
+/*https://css-tricks.com/the-trick-to-viewport-units-on-mobile/*/
+	*{
+		box-sizing: border-box;
+	}
+
+	body{
+		padding: 0;
+		margin: 0;
+	}
+
+	.main-container{
+		display: grid;
+		height: 100vh;
+		height: calc(var(--vh, 1vh) * 100);
+		grid-auto-rows: 1fr;
+	}
+
+	.mono{
+		font-family: monospace;
+	}
+
+	.alphabet-list{
+		display: grid;
+		grid-auto-flow: column;
+		grid-auto-columns: 1fr;
+		place-content: center;
+	}
+
+	.alphabet{
+		display: grid;
+		place-items: center;
+	}
+
+	.from{
+		background-color: yellow;
+	}
+
+	.to{
+		background-color: green;
+	}
+</style>
+</html>
